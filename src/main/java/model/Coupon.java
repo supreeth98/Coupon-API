@@ -9,6 +9,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.springframework.data.redis.core.RedisHash;
+
+@RedisHash("Coupon")
 @Entity
 @Table(name="couponDetails")
 public class Coupon implements Serializable {

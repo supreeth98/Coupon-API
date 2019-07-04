@@ -9,10 +9,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import model.AddCoupon_DTO;
 import model.Coupon;
+import model.CouponCodeRequest_DTO;
+import model.Status_DTO;
 import model.ValidateRequest_DTO;
 import model.ValidateResponse_DTO;
 import repository.CouponRepository;
@@ -33,9 +35,9 @@ public class CouponService {
 	}
 
 	public Optional<Coupon> get(int id) {
-		
-			 return couponRepository.findById(id);
-		 
+
+		return couponRepository.findById(id);
+
 
 	}
 
@@ -44,7 +46,7 @@ public class CouponService {
 		if(c==null)
 			return null;
 		else
-		return c;
+			return c;
 
 	}
 
@@ -104,7 +106,7 @@ public class CouponService {
 		int bill_amt;
 		int final_user_pts;
 		Coupon c = getBycoupon(CouponCode);
-		
+
 		if (c == null) {
 			d.setStatus("Coupon code you are looking for does not exist");
 			d.setDiscount_amt(0);
@@ -173,13 +175,58 @@ public class CouponService {
 				d.setFbill_amt(1);
 				return d;
 			}
-			
+
 			d.setDiscount_amt(flat_val);
 			d.setFbill_amt(obj.getCartAmt()-flat_val);
 			return d;
 		}
 		return null;
 
+	}
+
+	public Coupon changeStatus(String couponCode) {
+		Coupon c= getBycoupon(couponCode);
+		c.setStatus(0);
+		couponRepository.save(c);
+		//Status_DTO s= new Status_DTO();
+		//s.setErroMsg("Successful");
+		return c;
+	}
+
+	public Coupon AddCoupon(AddCoupon_DTO obj) {
+		String baseCode=obj.getBaseCouponCode();
+		Coupon coupon = new Coupon();
+		coupon.setTotal_used(0);
+		coupon.setDescripition(obj.getDescripition());
+		coupon.setCoupon_type(obj.getCoupon_type());
+		coupon.setMin_cart_val(obj.getMin_cart_val());
+		coupon.setMax_cart_val(obj.getMax_cart_val());
+		coupon.setStatus(1);
+		coupon.setMax_discount_amt(obj.getMax_discount_amt());
+		coupon.setPercent_val(obj.getPercent_val());
+		coupon.setFlat_val(obj.getFlat_val());
+		coupon.setStart_date(obj.getStart_date());
+		coupon.setEnd_date(obj.getEnd_date());
+
+		String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+				+ "0123456789"
+				+ "abcdefghijklmnopqrstuvxyz"; 
+		String sb1 = obj.getBaseCouponCode();
+		// create StringBuffer size of AlphaNumericString 
+		StringBuilder sb=new StringBuilder(sb1);
+				for (int i = 0; i < 5; i++) { 
+			// generate a random number between 
+			// 0 to AlphaNumericString variable length 
+			int index 
+			= (int)(AlphaNumericString.length() 
+					* Math.random()); 
+
+			// add Character one by one in end of sb 
+			sb.append(AlphaNumericString 
+					.charAt(index)); 
+		}
+				coupon.setCouponCode(sb.toString());
+		return coupon;
 	}
 
 }
