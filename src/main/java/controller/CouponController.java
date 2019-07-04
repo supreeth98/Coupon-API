@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import model.Coupon;
 import model.CouponCodeRequest_DTO;
 import model.CouponRequest_DTO;
+import model.ErrorResponse_DTO;
 import model.ValidateRequest_DTO;
 import model.ValidateResponse_DTO;
 import service.CouponService;
@@ -37,6 +38,8 @@ public class CouponController {
 	@RequestMapping(value = "/all", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<Coupon> getAll(){
 		
+
+		
 	return couponService.getAll();
 		
 	}
@@ -47,15 +50,27 @@ public class CouponController {
 		Optional<Coupon> c=couponService.get(obj.getId());
 		if(c.isPresent())
 			return ResponseEntity.ok(couponService.get(obj.getId()));
-		else
-			return ResponseEntity.notFound().build();
+		else {
+			ErrorResponse_DTO e= new ErrorResponse_DTO();
+			e.setErroMsg("Coupon does not exist");
+			return ResponseEntity.ok(e);
+		}
 	}
 	
 	//@Cacheable(value = "Coupons")
 	@RequestMapping(value = "/getByCouponCode", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Coupon getByCouponCode(@RequestBody CouponCodeRequest_DTO obj){
+	public ResponseEntity getByCouponCode(@RequestBody CouponCodeRequest_DTO obj){
 		
-		return couponService.getBycoupon(obj.getCouponCode());
+		Coupon c=couponService.getBycoupon(obj.getCouponCode());
+		if(c==null) {
+			ErrorResponse_DTO w= new ErrorResponse_DTO();
+			w.setErroMsg(" This CouponCode does not exist");
+			return ResponseEntity.ok(w);
+		}
+		else
+			return ResponseEntity.ok(couponService.getBycoupon(obj.getCouponCode()));
+		
+		//return couponService.getBycoupon(obj.getCouponCode());
 		
 	}
 	
