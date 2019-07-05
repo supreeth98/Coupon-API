@@ -1,5 +1,6 @@
 package service;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -13,17 +14,27 @@ import org.springframework.stereotype.Service;
 
 import model.AddCoupon_DTO;
 import model.Coupon;
-import model.CouponCodeRequest_DTO;
-import model.Status_DTO;
+import model.CouponResponse_DTO;
 import model.ValidateRequest_DTO;
 import model.ValidateResponse_DTO;
+import model.errors;
 import repository.CouponRepository;
+import repository.ErrorsRespository;
 
 @Service
 public class CouponService {
 
 	// @Autowired
 	private CouponRepository couponRepository;
+	
+	@Autowired
+	private ErrorsRespository errorsRespository;
+	
+	
+	/*
+	 * @Autowired public CouponService(ErrorsRespository errorsRespository) {
+	 * this.errorsRespository = errorsRespository; }
+	 */
 
 	@Autowired
 	public CouponService(CouponRepository couponRepository) {
@@ -41,12 +52,52 @@ public class CouponService {
 
 	}
 
-	public Coupon getBycoupon(String couponCode) {
+	public CouponResponse_DTO getBycoupon(String couponCode) {
+		//errors e= errorsRespository.findByerrorCode(1000);
 		Coupon c = (Coupon) couponRepository.findByCouponCode(couponCode);
-		if(c==null)
-			return null;
-		else
-			return c;
+		if(c!=null) {
+		CouponResponse_DTO response=new CouponResponse_DTO();
+		response.setId(Integer.toString(c.getId()));
+		response.setCouponCode(c.getCouponCode());
+		response.setDescripition(c.getDescripition());
+		response.setMin_cart_val(Integer.toString(c.getMin_cart_val()));
+		response.setMax_cart_val(Integer.toString(c.getMax_cart_val()));
+		response.setTotal_used(Integer.toString(c.getTotal_used()));
+		response.setCoupon_type(Integer.toString(c.getCoupon_type()));
+		response.setMax_usage(Integer.toString(c.getMax_cart_val()));
+		response.setStatus(Integer.toString(c.getStatus()));
+		response.setMax_discount_amt(Integer.toString(c.getMax_discount_amt()));
+		response.setPercent_val(Float.toString(c.getPercent_val()));
+		response.setFlat_val(Integer.toString(c.getFlat_val()));
+		response.setStart_date(c.getStart_date().toString());
+		response.setEnd_date(c.getEnd_date().toString());
+		response.setEstatus("0");
+		response.setErrorCode("");
+		response.setError_msg("");
+		return response;
+		}  
+		else {
+			CouponResponse_DTO response1=new CouponResponse_DTO();
+			response1.setId("");
+			response1.setCouponCode("");
+			response1.setDescripition("");
+			response1.setMin_cart_val("");
+			response1.setMax_cart_val("");
+			response1.setTotal_used("");
+			response1.setCoupon_type("");
+			response1.setStatus("");
+			response1.setMax_usage("");
+			response1.setMax_discount_amt("");
+			response1.setPercent_val("");
+			response1.setFlat_val("");
+			response1.setStart_date("");
+			response1.setEnd_date("");
+			response1.setEstatus("1");
+			response1.setErrorCode("1000");
+			response1.setError_msg("coupon does not exist");
+			return response1;
+		}
+		
 
 	}
 
@@ -55,7 +106,7 @@ public class CouponService {
 		int CartAmt = obj.getCartAmt();
 		int ctr;
 		boolean flag = false;
-		Coupon c = getBycoupon(CouponCode);
+		Coupon c = getBycoupon2(CouponCode);
 		if (c == null) {
 			flag = false;
 		} else {
@@ -94,7 +145,7 @@ public class CouponService {
 			return false;
 	}
 
-	//@SuppressWarnings("unused")
+	
 	public ValidateResponse_DTO ValidateWithInfo(ValidateRequest_DTO obj) throws ParseException {
 		ValidateResponse_DTO d = new ValidateResponse_DTO();
 		String CouponCode = obj.getCouponCode();
@@ -105,47 +156,65 @@ public class CouponService {
 		int final_discount_amt;
 		int bill_amt;
 		int final_user_pts;
-		Coupon c = getBycoupon(CouponCode);
+		Coupon c = getBycoupon2(CouponCode);
 
 		if (c == null) {
-			d.setStatus("Coupon code you are looking for does not exist");
-			d.setDiscount_amt(0);
-			d.setFbill_amt(obj.getCartAmt());
+			d.setStatus("1");
+			errors e= new errors();
+			e=errorsRespository.findByerrorCode(1000);
+			d.setError_msg(e.getError_msg());
+			d.setErrorCode("1000");
+			d.setDiscount_amt("0");
+			d.setFbill_amt(Integer.toString(obj.getCartAmt()));
 			return d;
 		}
 		String start_date = c.getStart_date();
 		String end_date = c.getEnd_date();
 		if (c.getStatus() != 1) {
-			d.setStatus("Coupon is not active");
-			d.setDiscount_amt(0);
-			d.setFbill_amt(obj.getCartAmt());
+			d.setStatus("1");
+			 errors e=errorsRespository.findByerrorCode(2000);
+			d.setError_msg(e.getError_msg());
+			d.setErrorCode("2000");
+			d.setDiscount_amt("0");
+			d.setFbill_amt(Integer.toString(obj.getCartAmt()));
 
 			return d;
 		}
 		if (!date_validate(start_date, end_date)) {
-			d.setStatus("Coupon can not be used because it is not being used in defined time period");
-			d.setDiscount_amt(0);
-			d.setFbill_amt(obj.getCartAmt());
+			d.setStatus("1");
+			 errors e=errorsRespository.findByerrorCode(3000);
+			 d.setError_msg(e.getError_msg());
+				d.setErrorCode("3000");
+			d.setDiscount_amt("0");
+			d.setFbill_amt(Integer.toString(obj.getCartAmt()));
 
 			return d;
 		}
 
 		if (c.getTotal_used() >= c.getMax_usage()) {
-			d.setStatus("Coupon has exceeded it usage limit");
-			d.setDiscount_amt(0);
-			d.setFbill_amt(obj.getCartAmt());
+			d.setStatus("1");
+			 errors e=errorsRespository.findByerrorCode(4000);
+			 d.setError_msg(e.getError_msg());
+				d.setErrorCode("4000");
+			d.setDiscount_amt("0");
+			d.setFbill_amt(Integer.toString(obj.getCartAmt()));
 
 			return d;
 		}
 
 		if (c.getMin_cart_val() > obj.getCartAmt() || c.getMax_cart_val() < obj.getCartAmt()) {
-			d.setStatus("Cart amount is not in defined range");
-			d.setDiscount_amt(0);
-			d.setFbill_amt(obj.getCartAmt());
+			d.setStatus("1");
+			 errors e=errorsRespository.findByerrorCode(5000);
+			 d.setError_msg(e.getError_msg());
+				d.setErrorCode("5000");
+			d.setDiscount_amt("0");
+			d.setFbill_amt(Integer.toString(obj.getCartAmt()));
 
 			return d;
 		}
-		d.setStatus("Coupon applied succesfully");
+		d.setStatus("0");
+		d.setErrorCode("");
+		d.setError_msg("");	
 		if (c.getCoupon_type() == 0) {
 			percent = c.getPercent_val();
 			discount_amt = obj.getCartAmt() * percent;
@@ -153,48 +222,89 @@ public class CouponService {
 
 			if (final_discount_amt > c.getMax_discount_amt()) {
 				final_discount_amt = c.getMax_discount_amt();
-				bill_amt = obj.getCartAmt() - final_discount_amt;
-
-				d.setDiscount_amt(final_discount_amt);
-				d.setFbill_amt(bill_amt);
-
+				bill_amt = obj.getCartAmt() - final_discount_amt;		
+				d.setDiscount_amt(Integer.toString(final_discount_amt));
+				d.setFbill_amt(Integer.toString(bill_amt));
 				return d;
 			} else {
 				bill_amt = obj.getCartAmt() - final_discount_amt;
-				d.setDiscount_amt(final_discount_amt);
-				d.setFbill_amt(bill_amt);
+				d.setDiscount_amt(Integer.toString(final_discount_amt));
+				d.setFbill_amt(Integer.toString(bill_amt));
 				return d;
 			}
 		}
 		else if(c.getCoupon_type()==1) {
 			int flat_val = c.getFlat_val();
 			if(flat_val>=obj.getCartAmt()) {
-				d.setStatus("Coupon applied succesfully."
-						+ "Please note that you have been charged 1 point as cart amount is less than or equal to the discount amount applied.");
-				d.setDiscount_amt(obj.getCartAmt()-1);
-				d.setFbill_amt(1);
+				d.setDiscount_amt(Integer.toString(obj.getCartAmt()-1));
+				d.setFbill_amt("1");
 				return d;
 			}
 
-			d.setDiscount_amt(flat_val);
-			d.setFbill_amt(obj.getCartAmt()-flat_val);
+			d.setDiscount_amt(Integer.toString(flat_val));
+			d.setFbill_amt(Integer.toString(obj.getCartAmt()-flat_val));
 			return d;
 		}
 		return null;
 
 	}
 
-	public Coupon changeStatus(String couponCode) {
-		Coupon c= getBycoupon(couponCode);
-		c.setStatus(0);
-		couponRepository.save(c);
-		//Status_DTO s= new Status_DTO();
-		//s.setErroMsg("Successful");
+	private Coupon getBycoupon2(String couponCode) {
+		Coupon c=couponRepository.findByCouponCode(couponCode);
 		return c;
 	}
 
+	public CouponResponse_DTO changeStatus(String couponCode) {
+		Coupon c= getBycoupon2(couponCode);
+		if(c!=null) {
+		c.setStatus(0);
+		couponRepository.save(c);
+		CouponResponse_DTO response=new CouponResponse_DTO();
+		response.setId(Integer.toString(c.getId()));
+		response.setCouponCode(c.getCouponCode());
+		response.setDescripition(c.getDescripition());
+		response.setMin_cart_val(Integer.toString(c.getMin_cart_val()));
+		response.setMax_cart_val(Integer.toString(c.getMax_cart_val()));
+		response.setTotal_used(Integer.toString(c.getTotal_used()));
+		response.setCoupon_type(Integer.toString(c.getCoupon_type()));
+		response.setMax_usage(Integer.toString(c.getMax_cart_val()));
+		response.setStatus(Integer.toString(c.getStatus()));
+		response.setMax_discount_amt(Integer.toString(c.getMax_discount_amt()));
+		response.setPercent_val(Float.toString(c.getPercent_val()));
+		response.setFlat_val(Integer.toString(c.getFlat_val()));
+		response.setStart_date(c.getStart_date().toString());
+		response.setEnd_date(c.getEnd_date().toString());
+		response.setEstatus("0");
+		response.setErrorCode("");
+		response.setError_msg("");
+		return response;
+		
+		}
+		else {
+			CouponResponse_DTO response1=new CouponResponse_DTO();
+			response1.setId("");
+			response1.setCouponCode("");
+			response1.setDescripition("");
+			response1.setMin_cart_val("");
+			response1.setMax_cart_val("");
+			response1.setTotal_used("");
+			response1.setCoupon_type("");
+			response1.setStatus("");
+			response1.setMax_usage("");
+			response1.setMax_discount_amt("");
+			response1.setPercent_val("");
+			response1.setFlat_val("");
+			response1.setStart_date("");
+			response1.setEnd_date("");
+			response1.setEstatus("1");
+			response1.setErrorCode("1000");
+			response1.setError_msg("coupon does not exist");
+			return response1;
+			
+		}
+	}
+
 	public Coupon AddCoupon(AddCoupon_DTO obj) {
-		String baseCode=obj.getBaseCouponCode();
 		Coupon coupon = new Coupon();
 		coupon.setTotal_used(0);
 		coupon.setDescripition(obj.getDescripition());
@@ -202,6 +312,7 @@ public class CouponService {
 		coupon.setMin_cart_val(obj.getMin_cart_val());
 		coupon.setMax_cart_val(obj.getMax_cart_val());
 		coupon.setStatus(1);
+		coupon.setMax_usage(obj.getMax_usage());
 		coupon.setMax_discount_amt(obj.getMax_discount_amt());
 		coupon.setPercent_val(obj.getPercent_val());
 		coupon.setFlat_val(obj.getFlat_val());
@@ -211,21 +322,16 @@ public class CouponService {
 		String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				+ "0123456789"
 				+ "abcdefghijklmnopqrstuvxyz"; 
-		String sb1 = obj.getBaseCouponCode();
-		// create StringBuffer size of AlphaNumericString 
-		StringBuilder sb=new StringBuilder(sb1);
-				for (int i = 0; i < 5; i++) { 
-			// generate a random number between 
-			// 0 to AlphaNumericString variable length 
-			int index 
-			= (int)(AlphaNumericString.length() 
-					* Math.random()); 
+		String sb = obj.getBaseCouponCode();
+		System.out.println(sb);
+		int n=sb.length();
 
-			// add Character one by one in end of sb 
-			sb.append(AlphaNumericString 
-					.charAt(index)); 
+		for (int i = n; i <n+5 ; i++) { 
+			int index = (int)(AlphaNumericString.length()* Math.random()); 
+			sb+=(AlphaNumericString .charAt(index)); 
 		}
-				coupon.setCouponCode(sb.toString());
+		coupon.setCouponCode(sb);
+		couponRepository.save(coupon);
 		return coupon;
 	}
 

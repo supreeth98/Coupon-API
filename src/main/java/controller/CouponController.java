@@ -17,6 +17,7 @@ import model.AddCoupon_DTO;
 import model.Coupon;
 import model.CouponCodeRequest_DTO;
 import model.CouponRequest_DTO;
+import model.CouponResponse_DTO;
 import model.Status_DTO;
 import model.ValidateRequest_DTO;
 import model.ValidateResponse_DTO;
@@ -63,17 +64,9 @@ public class CouponController {
 	
 	//@Cacheable(value = "Coupons")
 	@RequestMapping(value = "/getByCouponCode", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity getByCouponCode(@RequestBody CouponCodeRequest_DTO obj){
+	public CouponResponse_DTO getByCouponCode(@RequestBody CouponCodeRequest_DTO obj){
 		
-		Coupon c=couponService.getBycoupon(obj.getCouponCode());
-		
-		if(c==null) {
-			Status_DTO w= new Status_DTO();
-			w.setErroMsg(" This CouponCode does not exist");
-			return ResponseEntity.ok(w);
-		}
-		else
-			return ResponseEntity.ok(couponService.getBycoupon(obj.getCouponCode()));
+			return couponService.getBycoupon(obj.getCouponCode());
 		
 		//return couponService.getBycoupon(obj.getCouponCode());
 		
@@ -104,7 +97,7 @@ public class CouponController {
 	}
 	
 	@RequestMapping(value = "/SetInactive", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Coupon SetStatusInactive(@RequestBody CouponCodeRequest_DTO obj){
+	public CouponResponse_DTO SetStatusInactive(@RequestBody CouponCodeRequest_DTO obj){
 		
 		return couponService.changeStatus(obj.getCouponCode());	
 	}
