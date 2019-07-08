@@ -30,12 +30,6 @@ public class CouponService {
 	@Autowired
 	private ErrorsRespository errorsRespository;
 	
-	
-	/*
-	 * @Autowired public CouponService(ErrorsRespository errorsRespository) {
-	 * this.errorsRespository = errorsRespository; }
-	 */
-
 	@Autowired
 	public CouponService(CouponRepository couponRepository) {
 		this.couponRepository = couponRepository;
